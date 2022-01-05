@@ -50,6 +50,11 @@ contract CarPool {
     mapping(uint256 => Pool) internal pools;
     mapping(uint256 => Route) internal routes;
 
+    modifier onlyOwner(uint256 _index){
+        require(pools[_index].creator == msg.sender);
+        _;
+    }
+
     function createPool(
         string memory _origin,
         string memory _destination,
@@ -71,6 +76,25 @@ contract CarPool {
         );
 
         pools[poolsLength].passengers.push(msg.sender);
+
+        poolsLength++;
+    }
+
+    function editPool(
+        uint256 _index,
+        string memory _origin,
+        uint256 _initNumOfPassenger,
+        uint256 _price
+    ) public  onlyOwner{
+
+
+        require(pools[_index].numOfPassengers <= _initNumOfPassenger, "Cannot reduce number of passengers than already existing");
+        require(price > 0, "Enter a valid price");
+        pools[_index].origin = _origin;
+
+        pools[_index].initNumOfPassenger = _initNumOfPassenger;
+
+        pools[_index].price = _price;
 
         poolsLength++;
     }
@@ -115,6 +139,7 @@ contract CarPool {
 
     function joinPool(uint256 _index) public payable {
         require(pools[_index].numOfPassengers > 0, "Pool Full");
+        require(pools[_index].creator != address(0), "Pool does not exist");
         require(
             IERC20Token(cUsdTokenAddress).transferFrom(
                 msg.sender,
