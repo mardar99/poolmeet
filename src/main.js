@@ -3,10 +3,8 @@ import { newKitFromWeb3 } from "@celo/contractkit"
 import BigNumber from "bignumber.js"
 import marketplaceAbi from "../contract/marketplace.abi.json"
 import erc20Abi from "../contract/erc20.abi.json"
+import {MPContractAddress, ERC20_DECIMALS, cUSDContractAddress} from "./utils/constants";
 
-const ERC20_DECIMALS = 18
-const MPContractAddress = "0xE3504C5b0ED9a00C853D7f1e3abF4108140C3f94"
-const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 let kit
 let contract
@@ -37,7 +35,7 @@ const connectCeloWallet = async function () {
 async function approve(_price) {
   const cUSDContract = new kit.web3.eth.Contract(erc20Abi, cUSDContractAddress)
 
-  const result = await cUSDContract.methods
+ await cUSDContract.methods
     .approve(MPContractAddress, _price)
     .send({ from: kit.defaultAccount })
   return result
@@ -45,15 +43,15 @@ async function approve(_price) {
 
 const getBalance = async function () {
   const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
-  const cUSDBalance = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2)
-  document.querySelector("#balance").textContent = cUSDBalance
+  document.querySelector("#balance").textContent = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2)
+
 }
 
 const getPools = async function() {
   const _productsLength = await contract.methods.getPoolsLength().call()
   const _pools = []
   for (let i = 0; i < _productsLength; i++) {
-    let _pool = new Promise(async (resolve, reject) => {
+    let _pool = new Promise(async (resolve) => {
       let p = await contract.methods.getPool(i).call()
       let r = await contract.methods.getRoute(i).call()
       resolve({
@@ -124,7 +122,7 @@ window.addEventListener("load", async () => {
 
 document
   .querySelector("#newPoolBtn")
-  .addEventListener("click", async (e) => {
+  .addEventListener("click", async () => {
     const datesList = document.getElementsByClassName("check");
     let dates = ""
     for (let i of datesList){
@@ -144,7 +142,7 @@ document
     ]
     notification(`⌛ Adding pool...`)
     try {
-      const result = await contract.methods
+       await contract.methods
         .createPool(...params)
         .send({ from: kit.defaultAccount })
     } catch (error) {
@@ -165,7 +163,7 @@ document.querySelector("#marketplace").addEventListener("click", async (e) => {
     }
     notification(`⌛ Awaiting payment for pool...`)
     try {
-      const result = await contract.methods
+      await contract.methods
         .joinPool(index)
         .send({ from: kit.defaultAccount })
       notification(`🎉 You successfully joined.`)
